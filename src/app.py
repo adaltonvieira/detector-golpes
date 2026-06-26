@@ -5,7 +5,7 @@ sys.path.append(str(Path(__file__).resolve().parent))
 import streamlit as st
 from detector import analisar_mensagem
 
-st.set_page_config(page_title="Detector de Golpes", page_icon=None)
+st.set_page_config(page_title="Detector de Golpes")
 st.title("Detector de mensagens suspeitas")
 st.caption("Analise de phishing e golpes com IA (Groq + Llama) + verificacoes de seguranca")
 
@@ -25,15 +25,16 @@ if st.button("Analisar mensagem", type="primary"):
             r = analisar_mensagem(texto)
         except Exception as e:
             st.error(f"Erro ao analisar: {e}")
+            st.exception(e)
             st.stop()
 
     nivel = r.get("nivel_risco", "").lower()
     if nivel == "alto":
-        st.error(f"Risco: ALTO")
+        st.error("Risco: ALTO")
     elif nivel == "medio":
-        st.warning(f"Risco: MEDIO")
+        st.warning("Risco: MEDIO")
     else:
-        st.success(f"Risco: BAIXO")
+        st.success("Risco: BAIXO")
 
     st.subheader("Por que")
     st.write(r.get("explicacao", ""))

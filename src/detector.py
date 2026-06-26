@@ -6,7 +6,22 @@ from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
-client = Groq(api_key=os.environ["GROQ_API_KEY"])
+
+
+def _get_api_key():
+    key = os.environ.get("GROQ_API_KEY")
+    if not key:
+        try:
+            import streamlit as st
+            key = st.secrets["GROQ_API_KEY"]
+        except Exception:
+            pass
+    if not key:
+        raise RuntimeError("GROQ_API_KEY nao encontrada (.env ou Secrets do Streamlit)")
+    return key
+
+
+client = Groq(api_key=_get_api_key())
 MODELO = "llama-3.1-8b-instant"
 
 ENCURTADORES = ["bit.ly", "tinyurl", "goo.gl", "is.gd", "t.co", "ow.ly",
@@ -26,7 +41,6 @@ MARCAS = ["bradesco", "itau", "nubank", "caixa", "santander", "bb", "banco",
 TLDS_SUSPEITOS = [".xyz", ".top", ".click", ".live", ".online", ".site",
                   ".shop", ".fun", ".icu", ".cyou", ".rest", ".buzz"]
 
-# Captura links com http(s):// OU dominios "soltos" (ex: bradesco.com.golpe.xyz/x)
 URL_RE = re.compile(
     r"\b(?:https?://)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:/[^\s]*)?",
     re.IGNORECASE
@@ -35,7 +49,6 @@ IP_RE = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
 
 
 def _extrair_host(url):
-    """Pega o host de uma URL, com ou sem http://."""
     if not url.lower().startswith(("http://", "https://")):
         url = "http://" + url
     try:
@@ -45,7 +58,6 @@ def _extrair_host(url):
 
 
 def analisar_dominio(url):
-    """Verificacoes tecnicas de seguranca sobre o dominio de um link."""
     host = _extrair_host(url)
     if not host:
         return ["URL malformada"]
@@ -67,9 +79,7 @@ def analisar_dominio(url):
 
 
 def analisar_sinais(texto):
-    """Verificacoes deterministicas: extrai sinais objetivos do texto."""
     t = texto.lower()
-    # Filtra falsos positivos comuns do regex (ex: "R$ 50" nao e dominio)
     urls = [u for u in URL_RE.findall(texto) if "." in u and " " not in u]
 
     sinais = []
@@ -138,14 +148,3 @@ def analisar_mensagem(texto):
     resultado["sinais_tecnicos"] = base["sinais_detectados"]
     resultado["links"] = base["urls"]
     return resultado
-
-
-if __name__ == "__main__":
-    testes = [
-        "URGENTE! Sua conta sera bloqueada hoje. Confirme seu CPF: http://bit.ly/banco-seguro",
-        "Seu pix de R$ 50 foi recebido. Acesse bradesco.com.golpe.xyz para confirmar",
-        "Oi, tudo bem? Vamos almocar amanha?",
-    ]
-    for t in testes:
-        print(f"\n--- Mensagem: {t[:60]}...")
-        print(json.dumps(analisar_mensagem(t), indent=2, ensure_ascii=False))
