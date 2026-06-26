@@ -20,13 +20,14 @@ if st.button("Analisar mensagem", type="primary"):
         st.warning("Cole uma mensagem para analisar.")
         st.stop()
 
-    with st.spinner("Analisando..."):
-        try:
+    try:
+        with st.spinner("Analisando..."):
             r = analisar_mensagem(texto)
-        except Exception as e:
-            st.error(f"Erro ao analisar: {e}")
-            st.exception(e)
-            st.stop()
+    except Exception as e:
+        import traceback
+        st.error("Erro ao analisar:")
+        st.code(traceback.format_exc())
+        st.stop()
 
     nivel = r.get("nivel_risco", "").lower()
     if nivel == "alto":
