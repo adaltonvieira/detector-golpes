@@ -3,10 +3,12 @@ import re
 import json
 from urllib.parse import urlparse
 from groq import Groq
-from dotenv import load_dotenv
 
-load_dotenv()
-
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
 
 def _get_api_key():
     key = os.environ.get("GROQ_API_KEY")
